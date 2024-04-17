@@ -2,7 +2,7 @@
 import telebot
 import sqlite3
 import config
-import time
+from time import sleep
 import random
 from datetime import *
 
@@ -553,7 +553,7 @@ while runBot:
 		bot.polling()
 	except Exception:
 		log("RUN BOT EXCEPT!")
-		time.sleep(3)
+		sleep(3)
 
 #CLOSE DATABASE
 db.close()
