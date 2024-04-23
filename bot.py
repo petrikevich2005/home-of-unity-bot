@@ -4,14 +4,31 @@ import sqlite3
 import config
 from time import sleep
 import random
-from loguru import logger
+import logging
 
 db = sqlite3.connect("data.db", check_same_thread=False)
 cursor = db.cursor()
 
 bot = telebot.TeleBot(config.TOKEN)
 
-logger.add("logs/debug.log", rotation="03:00", compression="zip")
+
+#Logger settings
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+handler = logging.FileHandler("bot.log")
+handler.setLevel(logging.INFO)
+
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s | (%(levelname)s): %(message)s (Line: %(lineno)d) [%(filename)s]', datefmt='%d-%m-%Y %I:%M:%S')
+
+handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
+
+logger.addHandler(handler)
+logger.addHandler(console_handler)
 
 
 #Give username and level rules
@@ -96,8 +113,8 @@ def send_level_message(text, necessary_rules, sender):
 				bot.send_message(user[0], text)
 				count += 1
 			except Exception:
-				logger.error(f"error sending message to user {user[0]}")
-	logger.info(f"send level message to {count} user(s):\n{text}")
+				logger.info(f"error sending message to user {user[0]}")
+	logger.debug(f"send level message to {count} user(s)")
 	return count
 
 
@@ -151,7 +168,7 @@ def change_state(message):
 						cursor.execute("UPDATE users SET state = ? WHERE user_id = ?", (state, user[0]))
 						db.commit()
 			else:
-				logger.info(f"{message.from_user.id} dont have username")
+				logger.debug(f"{message.from_user.id} dont have username")
 				bot.send_message(message.from_user.id, f"Извините, но для выполнения этой команды необходимо наличие username.\nПожалуйста, установите свой username в настройках Telegram, после чего отправьте команду /update")
 		else:
 			be_baned(message.from_user.id, message.from_user.username, "prays_lists")
@@ -190,7 +207,7 @@ def change_event_state(message):
 #						cursor.execute("UPDATE users SET event = ? WHERE user_id = ?", (state, user[0]))
 #						db.commit()
 			else:
-				logger.info(f"user {message.from_user.id} dont have username")
+				logger.debug(f"user {message.from_user.id} dont have username")
 				bot.send_message(message.from_user.id, f"Извините, но для выполнения этой команды необходимо наличие username.\nПожалуйста, установите свой username в настройках Telegram, после чего отправьте команду /update")
 		else:
 			be_baned(message.from_user.id, message.from_user.username, "event")
@@ -230,7 +247,7 @@ def send_info(message):
 			logger.info(f"user {message.from_user.id} added to the database")
 
 		if check_rules(message.from_user.id) >= config.default:
-			logger.info(f"send info to user {message.from_user.id}")
+			logger.debug(f"send info to user {message.from_user.id}")
 			bot.send_message(message.from_user.id, config.info)
 		else:
 			be_baned(message.from_user.id, message.from_user.username, "info")
@@ -253,7 +270,7 @@ def update_data(message):
 			logger.debug("updating...")
 			cursor.execute("UPDATE users SET username = ? WHERE user_id = ?", (message.from_user.username, message.from_user.id))
 			db.commit()
-			logger.info(f"username {message.from_user.id} update completed successfully")
+			logger.debug(f"username {message.from_user.id} update completed successfully")
 			send_level_message(f"Пользователь @{message.from_user.username} успешно обновил(а) своё имя пользователя.", config.developer, message.from_user.id)
 			bot.send_message(message.from_user.id, "Ваше имя пользователя обновлено.")
 	except Exception as e:
@@ -287,10 +304,10 @@ def who_i_am(message):
 			complete = False
 
 		if complete == True:
-			logger.info(f"the command completed successfully!")
+			logger.debug(f"the command completed successfully!")
 			bot.send_message(message.from_user.id, f"Ваш уровень доступа относится к категории \"{rules}\"")
 		else:
-			logger.info(f"not found access level of user {message.from_user.id}! (@{message.from_user.username})")
+			logger.warning(f"not found access level of user {message.from_user.id}! (@{message.from_user.username})")
 			bot.send_message(message.from_user.id, "Ошибка!\nВаш уровень доступа не относится ни к одной из категорий.\nПожалуйста, обратитесь к лидеру или ответственному за бота.")
 	except Exception as e:
 		logger.exception(e)
@@ -323,7 +340,7 @@ def text(message):
 				text = message.text[9:]
 				cursor.execute("UPDATE users SET my_wish = ? WHERE user_id = ?", (text, message.from_user.id))
 				db.commit()
-				logger.info(f"set wish for {message.from_user.id}")
+				logger.debug(f"set wish for {message.from_user.id}")
 				bot.send_message(message.from_user.id, f"Текст успешно сохранён")
 
 
@@ -366,11 +383,11 @@ def text(message):
 							runRandomize = False
 
 				for i in range(len(prayers_list)):
-					logger.info(f"{getIDFromUsername(prayers_list[i])} -> {getIDFromUsername(prayers_list_parallel[i])}")
+					logger.debug(f"{getIDFromUsername(prayers_list[i])} -> {getIDFromUsername(prayers_list_parallel[i])}")
 					try:
 						bot.send_message(getIDFromUsername(prayers_list[i]), f"Привет!\nНа этой неделе ты молишься за @{prayers_list_parallel[i]}\n{randomText()}")
 					except Exception:
-						logger.error(f"error sending message to user {getIDFromUsername(prayers_list[i])}")
+						logger.warning(f"error sending message to user {getIDFromUsername(prayers_list[i])}")
 					cursor.execute("UPDATE users SET prays_friend = ? WHERE username = ?", (prayers_list_parallel[i], prayers_list[i]))
 					db.commit()
 
@@ -420,11 +437,11 @@ def text(message):
 							runRandomize = False
 
 				for i in range(len(users_list)):
-					logger.info(f"{getIDFromUsername(users_list[i])} -> {getIDFromUsername(users_list_parallel[i])}")
+					logger.debug(f"{getIDFromUsername(users_list[i])} -> {getIDFromUsername(users_list_parallel[i])}")
 					try:
 						bot.send_message(getIDFromUsername(users_list[i]), f"Привет!\nТы тайный ангел для @{users_list_parallel[i]}\nЕго пожелания:\n{wish_of_users_parallel[i]}")
 					except Exception:
-						logger.error(f"error sending message to user {getIDFromUsername(users_list[i])}")
+						logger.warning(f"error sending message to user {getIDFromUsername(users_list[i])}")
 					cursor.execute("UPDATE users SET santa_for = ? WHERE username = ?", (users_list_parallel[i], users_list[i]))
 					db.commit()
 
@@ -434,7 +451,7 @@ def text(message):
 				logger.debug("try send message to all user...")
 				text = message.text[2:]
 				count = send_level_message(text, config.default, message.from_user.id)
-				logger.info(f"user {message.from_user.id} send message to {count} user(s):\n{text}")
+				logger.info(f"user {message.from_user.id} send message to {count} user(s)")
 				bot.send_message(message.from_user.id, f"Сообщение отправлено {count} пользователям.")
 
 			#SEND MESSAGE TO ALL PRAYERS
@@ -449,9 +466,9 @@ def text(message):
 							bot.send_message(user[0], text)
 							count += 1
 						except Exception:
-							logger.error(f"error sending message to user {user[0]}")
+							logger.info(f"error sending message to user {user[0]}")
 							send_level_message(f"Ошибка! Проверьте пользователя {user[0]}", config.developer, 0)
-				logger.info(f"user {message.from_user.id} send message to {count} user(s):\n{text}")
+				logger.info(f"user {message.from_user.id} send message to {count} user(s):")
 				bot.send_message(message.from_user.id, f"Сообщение отправлено {count} пользователям.")
 
 			#SEND MESSAGE TO MODERATORS AND ADMINS
@@ -459,7 +476,7 @@ def text(message):
 				logger.debug("try send message to all moderators and admins...")
 				text = message.text[1:]
 				count = send_level_message(text, config.moderator, message.from_user.id)
-				logger.info(f"user {message.from_user.id} send message to {count} admin(s):\n{text}")
+				logger.info(f"user {message.from_user.id} send message to {count} admin(s)")
 				bot.send_message(message.from_user.id, f"Сообщение отправлено {count} админам.")
 
 
@@ -469,10 +486,10 @@ def text(message):
 				try:
 					resours = giveNameAndLevel(message.text)
 					if resours == False:
-						logger.info("change access level error! (level not found)")
+						logger.debug("change access level error! (level not found)")
 						bot.send_message(message.from_user.id, "Ошибка! \nВведённое значение уровня доступа находится вне диапазона.")
 					elif resours[1] == 0:
-						logger.info(f"user {message.from_user.id} tried to set access level 0 to user @{resours[0]}, but there is a /ban command for this")
+						logger.debug(f"user {message.from_user.id} tried to set access level 0 to user @{resours[0]}, but there is a /ban command for this")
 						bot.send_message(message.from_user.id, "Для блокировки пользователя введите: \n/ban [username]")
 					else:
 						if check_username(resours[0]) == 1:
@@ -488,21 +505,21 @@ def text(message):
 										try:
 											bot.send_message(getIDFromUsername(resours[0]), f"Ваш уровень доступа изменён на {resours[1]}")
 										except Exception:
-											logger.error(f"error sending message to user {getIDFromUsername(resours[0])}")
+											logger.info(f"error sending message to user {getIDFromUsername(resours[0])}")
 											send_level_message(f"Ошибка оповещения пользователя! Проверьте пользователя @{resours[0]}", config.developer, 0)
 									send_level_message(f"Пользователь @{message.from_user.username} изменил уровень доступа пользователя @{resours[0]} на {resours[1]}", config.developer, message.from_user.id)
 								else:
-									logger.info(f"user {message.from_user.id} access level is lower than user @{resours[0]}")
+									logger.debug(f"user {message.from_user.id} access level is lower than user @{resours[0]}")
 									bot.send_message(message.from_user.id, f"Вы не можете изменить уровень доступа этого пользователя, так как ваш уровень доступа ниже, чем уровень доступа @{resours[0]}")
 							else:
-								logger.info(f"user {message.from_user.id} tries to give user {getIDFromUsername(resours[0])} an access level higher than his own")
+								logger.debug(f"user {message.from_user.id} tries to give user {getIDFromUsername(resours[0])} an access level higher than his own")
 								bot.send_message(message.from_user.id, f"У вас недостаточно прав для выполнения этой команды.")
 						else:
-							logger.info(f"user @{resours[0]} not found!")
+							logger.debug(f"user @{resours[0]} not found!")
 							bot.send_message(message.from_user.id, f"Пользователя @{resours[0]} нет в базе данных.")
 
 				except Exception as e:
-					logger.error(e)
+					logger.debug(e)
 					bot.send_message(message.from_user.id, f"Ошибка изменения прав пользователя.\nПроверьте, правильно ли вы ввели команду.")
 
 			#BAN USER
@@ -533,20 +550,20 @@ def text(message):
 									try:
 										bot.send_message(getIDFromUsername(username), f"Вы заблокированы.")
 									except Exception:
-										logger.error(f"error sending message to user {getIDFromUsername(username)}")
+										logger.info(f"error sending message to user {getIDFromUsername(username)}")
 										send_level_message(f"Ошибка оповещения пользователя! Проверьте пользователя @{getIDFromUsername(user[0])} \n({user[0]})", config.developer, 0)
 								send_level_message(f"@{message.from_user.username} заблокировал @{username}", config.developer, message.from_user.id)
 							else:
-								logger.info(f"user {message.from_user.id} dont have rules for ban user {getIDFromUsername(username)}")
+								logger.debug(f"user {message.from_user.id} dont have rules for ban user {getIDFromUsername(username)}")
 								bot.send_message(message.from_user.id, f"У вас недостаточно прав для блокировки пользователя @{username}")
 						else:
-							logger.info(f"user @{username} not found!")
+							logger.debug(f"user @{username} not found!")
 							bot.send_message(message.from_user.id, f"Пользователя @{username} нет в базе данных.")
 					else:
-						logger.info("user blocked error! (the command was entered incorrectly)")
+						logger.debug("user blocked error! (the command was entered incorrectly)")
 						bot.send_message(message.from_user.id, "Ошибка блокировки пользователя.\nПроверьте, правильно ли вы ввели команду.\nПосле \"/ban\" должен стоять пробел.")
 				except Exception as e:
-					logger.error(e)
+					logger.debug(e)
 					bot.send_message(message.from_user.id, "Ошибка блокировки пользователя.\nПроверьте, правильно ли вы ввели команду.")
 
 
@@ -559,7 +576,7 @@ def text(message):
 					bot.send_message(message.from_user.id, f"{config.moderator_help_list}")
 
 		else:
-			logger.info(f"user {message.from_user.id} dont have username")
+			logger.debug(f"user {message.from_user.id} dont have username")
 			bot.send_message(message.from_user.id, f"Извините, но для выполнения этой команды необходимо наличие username.\nПожалуйста, установите свой username в настройках Telegram, после чего отправьте команду /update")
 
 
@@ -570,7 +587,7 @@ def text(message):
 #RUN
 runBot = True
 while runBot:
-	logger.debug("TRY RUN BOT...")
+	logger.info("RUN BOT...")
 	try:
 		bot.polling()
 	except Exception as e:
