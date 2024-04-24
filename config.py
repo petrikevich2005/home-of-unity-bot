@@ -1,12 +1,12 @@
 #CONFIG
 TOKEN=""
 
-#Rules group
-default = 1
-moderator = 2
-admin = 3
-developer = 4
-ban = 0
+#Category of users
+DEFAULT = 1
+MODERATOR = 2
+ADMIN = 3
+DEVELOPER = 4
+BAN = 0
 
 #Text's
 start_text = "Привет 👋\nWelcome to home_of_unity!"
