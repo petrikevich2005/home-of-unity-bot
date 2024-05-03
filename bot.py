@@ -2,33 +2,15 @@
 import telebot
 import sqlite3
 import config
+from package import get_logger
 from time import sleep
 import random
-import logging
 
 db = sqlite3.connect("data.db", check_same_thread=False)
 
 bot = telebot.TeleBot(config.TOKEN)
 
-
-#Logger settings
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-handler = logging.FileHandler("bot.log")
-handler.setLevel(logging.INFO)
-
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-
-formatter = logging.Formatter('%(asctime)s | (%(levelname)s): %(message)s (Line: %(lineno)d) [%(filename)s]', datefmt='%d-%m-%Y %I:%M:%S')
-
-handler.setFormatter(formatter)
-console_handler.setFormatter(formatter)
-
-logger.addHandler(handler)
-logger.addHandler(console_handler)
-
+logger = get_logger(__name__)
 
 def add_to_database(user_id, username):
 	logger.debug("adding to the database...")
@@ -122,7 +104,6 @@ def send_message_to_specific_category_users(text, necessary_rules, sender):
 				count += 1
 			except Exception:
 				logger.info(f"error sending message to user {user[0]}")
-				send_message_to_specific_category_users(f"Ошибка!\nПроверьте пользователя {user[0]}", config.DEVELOPER, 0)
 	logger.debug(f"send a message to a specifical category to {count} user(s)")
 	return count
 
