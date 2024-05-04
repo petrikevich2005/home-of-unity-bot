@@ -1,16 +1,17 @@
 #HOME OF UNITY BOT
 import telebot
 import sqlite3
-import config
-from package import get_logger
 from time import sleep
 import random
+import config
+import utils
+import user_utils
 
 db = sqlite3.connect("data.db", check_same_thread=False)
 
 bot = telebot.TeleBot(config.TOKEN)
 
-logger = get_logger(__name__)
+logger = utils.get_logger(__name__)
 
 def add_to_database(user_id, username):
 	logger.debug("adding to the database...")
@@ -69,18 +70,6 @@ def get_user_category(user_id):
 	else:
 		return info[0]
 
-#Check user id
-def check_user_id(user_id):
-	with db as cursor:
-		info = cursor.execute("SELECT user_id FROM users WHERE user_id = ?", (user_id,)).fetchone()
-	return info is not None
-
-#Check username
-def check_username(username):
-	with db as cursor:
-		info = cursor.execute("SELECT username FROM users WHERE username = ?", (username,)).fetchone()
-	return info is not None
-
 #Get user id from username
 def get_id_using_username(username):
 	with db as cursor:
@@ -90,7 +79,6 @@ def get_id_using_username(username):
 		return False
 	else:
 		return info[0]
-
 
 #Send a message to a specific category of users
 def send_message_to_specific_category_users(text, necessary_rules, sender):
@@ -107,14 +95,12 @@ def send_message_to_specific_category_users(text, necessary_rules, sender):
 	logger.debug(f"send a message to a specifical category to {count} user(s)")
 	return count
 
-
 #Command start
 @bot.message_handler(commands=['start'])
 def start(message):
 	logger.debug(f"user {message.from_user.id} tried use command \"start\"...")
 	try:
-		if check_user_id(message.from_user.id) == False:
-			logger.debug("pre_add")
+		if not user_utils.check_user_id(message.from_user.id):
 			add_to_database(message.from_user.id, message.from_user.username)
 
 		if get_user_category(message.from_user.id) >= config.DEFAULT:
@@ -124,17 +110,16 @@ def start(message):
 	except Exception as e:
 		logger.error(e)
 
-
 #Added to prays lists
 @bot.message_handler(commands=['prays_lists'])
 def change_state(message):
 	logger.debug(f"user {message.from_user.id} tried use command \"prays_lists\"...")
 	try:
-		if check_user_id(message.from_user.id) == False:
+		if not user_utils.check_user_id(message.from_user.id):
 			add_to_database(message.from_user.id, message.from_user.username)
 
 		if get_user_category(message.from_user.id) >= config.DEFAULT:
-			if check_username(message.from_user.username) == True and message.from_user.username != None:
+			if user_utils.check_username(message.from_user.username) and message.from_user.username != None:
 				with db as cursor:
 					users = cursor.execute("SELECT user_id, state FROM users WHERE rules >= ?", (config.DEFAULT,))
 				for user in users:
@@ -160,17 +145,16 @@ def change_state(message):
 	except Exception as e:
 		logger.error(e)
 
-
 #Added event
 @bot.message_handler(commands=['event'])
 def change_event_state(message):
 	logger.debug(f"user {message.from_user.id} tried use command \"event\"...")
 	try:
-		if check_user_id(message.from_user.id) == False:
+		if not user_utils.check_user_id(message.from_user.id):
 			add_to_database(message.from_user.id, message.from_user.username)
 
 		if get_user_category(message.from_user.id) >= config.DEFAULT:
-			if check_username(message.from_user.username) == True and message.from_user.username != None:
+			if user_utils.check_username(message.from_user.username) and message.from_user.username != None:
 				with db as cursor:
 					users = cursor.execute("SELECT user_id, event FROM users WHERE rules >= ?", (config.DEFAULT,))
 				for user in users:
@@ -197,13 +181,12 @@ def change_event_state(message):
 	except Exception as e:
 		logger.error(e)
 
-
 #Set the user to developer category
 @bot.message_handler(commands=['key'])
 def set_the_user_to_developer_category(message):
 	logger.debug(f"user {message.from_user.id} is trying to get developer rights...")
 	try:
-		if check_user_id(message.from_user.id) == False:
+		if not user_utils.check_user_id(message.from_user.id):
 			add_to_database(message.from_user.id, message.from_user.username)
 
 		with db as cursor:
@@ -214,13 +197,12 @@ def set_the_user_to_developer_category(message):
 	except Exception as e:
 		logger.error(e)
 
-
 #Send the user information about the bot
 @bot.message_handler(commands=['info'])
 def send_info(message):
 	logger.debug(f"user {message.from_user.id} tried use command \"info\"...")
 
-	if check_user_id(message.from_user.id) == False:
+	if not user_utils.check_user_id(message.from_user.id):
 		add_to_database(message.from_user.id, message.from_user.username)
 
 	if get_user_category(message.from_user.id) >= config.DEFAULT:
@@ -229,13 +211,12 @@ def send_info(message):
 	else:
 		is_baned(message.from_user.id, "info")
 
-
 #Update data of user in Data Base
 @bot.message_handler(commands=['update'])
 def update_user_data(message):
 	logger.debug(f"user {message.from_user.id} is trying to update his username...")
 	try:
-		if check_user_id(message.from_user.id) == False:
+		if not user_utils.check_user_id(message.from_user.id):
 			add_to_database(message.from_user.id, message.from_user.username)
 
 		else:
@@ -248,13 +229,12 @@ def update_user_data(message):
 	except Exception as e:
 		logger.error(e)
 
-
 #Who i am?
 @bot.message_handler(commands=['who'])
 def who_i_am(message):
 	logger.debug(f"user {message.from_user.id} is trying to use command \"who\"...")
 	try:
-		if check_user_id(message.from_user.id) == False:
+		if not user_utils.check_user_id(message.from_user.id):
 			add_to_database(message.from_user.id, message.from_user.username)
 
 		complete = True
@@ -272,7 +252,7 @@ def who_i_am(message):
 		else:
 			complete = False
 
-		if complete == True:
+		if complete:
 			logger.debug(f"the command completed successfully!")
 			bot.send_message(message.from_user.id, f"Ваш уровень доступа относится к категории \"{rules}\"")
 		else:
@@ -281,17 +261,16 @@ def who_i_am(message):
 	except Exception as e:
 		logger.error(e)
 
-
 #Other
 @bot.message_handler(content_types=['text'])
 def text(message):
 	logger.debug(f"user {message.from_user.id} is trying to use command \"text\"...")
 	try:
-		if check_user_id(message.from_user.id) == False:
+		if not user_utils.check_user_id(message.from_user.id):
 			add_to_database(message.from_user.id, message.from_user.username)
 
 		#CHECK USERNAME
-		if check_username(message.from_user.username) == True and message.from_user.username != None:
+		if user_utils.check_username(message.from_user.username) and message.from_user.username != None:
 			rules_level = get_user_category(message.from_user.id)
 
 
@@ -334,7 +313,7 @@ def text(message):
 								rand = False
 
 						#Dont user1 -> user1
-						if random_id == i and rand == True:
+						if random_id == i and rand:
 							if i == len(prayers_list)-1 and i != 0:
 								prayers_list_parallel.append(prayers_list_parallel[0])
 								prayers_list_parallel[0] = prayers_list[i]
@@ -343,7 +322,7 @@ def text(message):
 							else:
 								rand = False
 
-						if rand == True and stop == False:
+						if rand and not stop:
 							prayers_list_parallel.append(prayers_list[random_id])
 							users_id_in_use.append(random_id)
 							run_randomize = False
@@ -386,7 +365,7 @@ def text(message):
 								rand = False
 
 						#Dont user1 -> user1
-						if random_id == i and rand == True:
+						if random_id == i and rand:
 							if i == len(users_list)-1 and i != 0:
 								users_list_parallel.append(users_list_parallel[0])
 								wish_of_users_parallel.append(wish_of_users_parallel[0])
@@ -397,7 +376,7 @@ def text(message):
 							else:
 								rand = False
 
-						if rand == True and stop == False:
+						if rand and not stop:
 							users_list_parallel.append(users_list[random_id])
 							wish_of_users_parallel.append(wish_of_users[random_id])
 							users_id_in_use.append(random_id)
@@ -453,14 +432,14 @@ def text(message):
 				logger.debug(f"try change access level...")
 				try:
 					resours = select_name_and_category(message.text)
-					if resours == False:
+					if not resours:
 						logger.debug("change access level error! (level not found)")
 						bot.send_message(message.from_user.id, "Ошибка! \nВведённое значение уровня доступа находится вне диапазона.")
 					elif resours[1] == 0:
 						logger.debug(f"user {message.from_user.id} tried to set access level 0 to user @{resours[0]}, but there is a /ban command for this")
 						bot.send_message(message.from_user.id, "Для блокировки пользователя введите: \n/ban [username]")
 					else:
-						if check_username(resours[0]) == True:
+						if user_utils.check_username(resours[0]):
 							if get_user_category(message.from_user.id) >= resours[1]:
 								if get_user_category(message.from_user.id) >= get_user_category(get_id_using_username(resours[0])):
 									logger.debug("changing access level...")
@@ -506,7 +485,7 @@ def text(message):
 
 						username = "".join(username)
 
-						if check_username(username) == True:
+						if user_utils.check_username(username):
 							if get_user_category(message.from_user.id) >= get_user_category(get_id_using_username(username)):
 								logger.debug("changing access level...")
 								with db as cursor:
