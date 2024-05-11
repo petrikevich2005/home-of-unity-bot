@@ -6,16 +6,18 @@ import random
 import config
 import utils
 import user_utils
+import os
+from dotenv import load_dotenv
 
-db = sqlite3.connect("data.db", check_same_thread=False)
+load_dotenv()
 
-bot = telebot.TeleBot(config.TOKEN)
+bot = telebot.TeleBot(os.getenv("TOKEN"))
 
 logger = utils.get_logger(__name__)
 
 def add_to_database(user_id, username):
 	logger.debug("adding to the database...")
-	with db as cursor:
+	with sqlite3.connect("data.db") as cursor:
 		cursor.execute("INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (user_id, "empty", username, 0, config.DEFAULT, "empty", 0, "empty", "empty"))
 	logger.info(f"user {user_id} added to the database")
 	send_message_to_specific_category_users(f"Пользователь @{username} добавлен(а) в базу данных.", config.ADMIN, user_id)
@@ -47,7 +49,7 @@ def select_name_and_category(text):
 
 #Get random text from the databse
 def get_random_text():
-	with db as cursor:
+	with sqlite3.connect("data.db") as cursor:
 		texts = cursor.execute("SELECT text FROM texts")
 	texts_list = []
 	for text in texts:
@@ -62,7 +64,7 @@ def is_baned(user_id, command):
 
 #Check rules of user
 def get_user_category(user_id):
-	with db as cursor:
+	with sqlite3.connect("data.db") as cursor:
 		info = cursor.execute("SELECT rules FROM users WHERE user_id = ?", (user_id,)).fetchone()
 	if info == None:
 		logger.debug(f"not found rules of user {user_id}")
@@ -72,7 +74,7 @@ def get_user_category(user_id):
 
 #Get user id from username
 def get_id_using_username(username):
-	with db as cursor:
+	with sqlite3.connect("data.db") as cursor:
 		info = cursor.execute("SELECT user_id FROM users WHERE username = ?", (username,)).fetchone()
 	if info == None:
 		logger.debug(f"not found user @{username}")
@@ -83,7 +85,7 @@ def get_id_using_username(username):
 #Send a message to a specific category of users
 def send_message_to_specific_category_users(text, necessary_rules, sender):
 	count = 0
-	with db as cursor:
+	with sqlite3.connect("data.db") as cursor:
 		users = cursor.execute("SELECT user_id FROM users WHERE rules >= ?", (necessary_rules,))
 	for user in users:
 		if user[0] != str(sender):
@@ -110,7 +112,7 @@ def start(message):
 	except Exception as e:
 		logger.error(e)
 
-#Added to prays lists
+#Adding to prays lists
 @bot.message_handler(commands=['prays_lists'])
 def change_state(message):
 	logger.debug(f"user {message.from_user.id} tried use command \"prays_lists\"...")
@@ -120,7 +122,7 @@ def change_state(message):
 
 		if get_user_category(message.from_user.id) >= config.DEFAULT:
 			if user_utils.check_username(message.from_user.username) and message.from_user.username != None:
-				with db as cursor:
+				with sqlite3.connect("data.db") as cursor:
 					users = cursor.execute("SELECT user_id, state FROM users WHERE rules >= ?", (config.DEFAULT,))
 				for user in users:
 					if user[0] == str(message.from_user.id):
@@ -135,7 +137,7 @@ def change_state(message):
 							logger.info(f"user {user[0]} added to prays lists")
 							send_message_to_specific_category_users(f"Пользователь @{message.from_user.username} добавил(а) себя в молитвенные листочки.", config.ADMIN, message.from_user.id)
 							bot.send_message(user[0], "Вы добавлены в молитвенные листочки.")
-						with db as cursor:
+						with sqlite3.connect("data.db") as cursor:
 							cursor.execute("UPDATE users SET state = ? WHERE user_id = ?", (state, user[0]))
 			else:
 				logger.debug(f"{message.from_user.id} dont have username")
@@ -154,25 +156,25 @@ def change_event_state(message):
 			add_to_database(message.from_user.id, message.from_user.username)
 
 		if get_user_category(message.from_user.id) >= config.DEFAULT:
-			if user_utils.check_username(message.from_user.username) and message.from_user.username != None:
-				with db as cursor:
+			bot.send_message(message.from_user.id, "Регистрация недоступна.")
+			if user_utils.check_username(message.from_user.username) and message.from_user.username != None and False:
+				with sqlite3.connect("data.db") as cursor:
 					users = cursor.execute("SELECT user_id, event FROM users WHERE rules >= ?", (config.DEFAULT,))
 				for user in users:
 					if user[0] == str(message.from_user.id):
 						logger.debug(f"try change event_state...")
-						bot.send_message(message.from_user.id, "Регистрация недоступна.")
-#						state = 0
-#						if user[1] == 1:
-#							logger.info(f"user {user[0]} has been removed from event lists")
-#							send_message_to_specific_category_users(f"Пользователь @{message.from_user.username} больше не учавствует в дополнительном событии.", config.ADMIN, message.from_user.id)
-#							bot.send_message(user[0], "Вы больше не тайный ангел.")
-#						else:
-#							state = 1
-#							logger.info(f"user {user[0]} added to event")
-#							send_message_to_specific_category_users(f"Пользователь @{message.from_user.username} учавствует в дополнительном событии.", config.ADMIN, message.from_user.id)
-#							bot.send_message(user[0], "Теперь вы тайный ангел.")
-#						with db as cursor:
-#							cursor.execute("UPDATE users SET event = ? WHERE user_id = ?", (state, user[0]))
+						state = 0
+						if user[1] == 1:
+							logger.info(f"user {user[0]} has been removed from event lists")
+							send_message_to_specific_category_users(f"Пользователь @{message.from_user.username} больше не учавствует в дополнительном событии.", config.ADMIN, message.from_user.id)
+							bot.send_message(user[0], "Вы больше не тайный ангел.")
+						else:
+							state = 1
+							logger.info(f"user {user[0]} added to event")
+							send_message_to_specific_category_users(f"Пользователь @{message.from_user.username} учавствует в дополнительном событии.", config.ADMIN, message.from_user.id)
+							bot.send_message(user[0], "Теперь вы тайный ангел.")
+						with sqlite3.connect("data.db") as cursor:
+							cursor.execute("UPDATE users SET event = ? WHERE user_id = ?", (state, user[0]))
 			else:
 				logger.debug(f"user {message.from_user.id} dont have username")
 				bot.send_message(message.from_user.id, f"Извините, но для выполнения этой команды необходимо наличие username.\nПожалуйста, установите свой username в настройках Telegram, после чего отправьте команду /update")
@@ -189,7 +191,7 @@ def set_the_user_to_developer_category(message):
 		if not user_utils.check_user_id(message.from_user.id):
 			add_to_database(message.from_user.id, message.from_user.username)
 
-		with db as cursor:
+		with sqlite3.connect("data.db") as cursor:
 			cursor.execute("UPDATE users SET rules = ? WHERE user_id = ?", (config.DEVELOPER, message.from_user.id))
 		logger.info(f"user {message.from_user.id} has been granted developer rights")
 		bot.send_message(message.from_user.id, "Ваши права изменены на \'РАЗРАБОТЧИК\'")
@@ -221,7 +223,7 @@ def update_user_data(message):
 
 		else:
 			logger.debug("updating...")
-			with db as cursor:
+			with sqlite3.connect("data.db") as cursor:
 				cursor.execute("UPDATE users SET username = ? WHERE user_id = ?", (message.from_user.username, message.from_user.id))
 			logger.debug(f"username {message.from_user.id} update completed successfully")
 			send_message_to_specific_category_users(f"Пользователь @{message.from_user.username} успешно обновил(а) своё имя пользователя.", config.DEVELOPER, message.from_user.id)
@@ -273,7 +275,6 @@ def text(message):
 		if user_utils.check_username(message.from_user.username) and message.from_user.username != None:
 			rules_level = get_user_category(message.from_user.id)
 
-
 			#CHECK BAN LEVEL
 			if rules_level < config.DEFAULT:
 				is_baned(message.from_user.id, "text")
@@ -282,16 +283,15 @@ def text(message):
 			elif message.text[:8] == "/my_wish" and False: #OFF
 				logger.debug("try set wish...")
 				text = message.text[9:]
-				with db as cursor:
+				with sqlite3.connect("data.db") as cursor:
 					cursor.execute("UPDATE users SET my_wish = ? WHERE user_id = ?", (text, message.from_user.id))
 				logger.debug(f"set wish for {message.from_user.id}")
 				bot.send_message(message.from_user.id, f"Текст успешно сохранён")
 
-
 			#RANDOMIZE USERS FOR PRAYS LISTS
 			elif message.text == "/randomize" and rules_level >= config.MODERATOR:
 				logger.debug("try randomize...")
-				with db as cursor:
+				with sqlite3.connect("data.db") as cursor:
 					users = cursor.execute("SELECT username, state FROM users WHERE rules >= ?", (config.DEFAULT,))
 				prayers_list = []
 				prayers_list_parallel = []
@@ -333,14 +333,13 @@ def text(message):
 						bot.send_message(get_id_using_username(prayers_list[i]), f"Привет!\nНа этой неделе ты молишься за @{prayers_list_parallel[i]}\n{get_random_text()}")
 					except Exception:
 						logger.warning(f"error sending message to user {get_id_using_username(prayers_list[i])}")
-					with db as cursor:
+					with sqlite3.connect("data.db") as cursor:
 						cursor.execute("UPDATE users SET prays_friend = ? WHERE username = ?", (prayers_list_parallel[i], prayers_list[i]))
-
 
 			#START EVENT (RANDOMIZE)
 			elif message.text == "/start_event" and False: #OFF
 				logger.debug("try start_event...")
-				with db as cursor:
+				with sqlite3.connect("data.db") as cursor:
 					users = cursor.execute("SELECT username, event, my_wish FROM users WHERE rules >= ?", (config.DEFAULT,))
 				users_list = []
 				users_list_parallel = []
@@ -388,9 +387,8 @@ def text(message):
 						bot.send_message(get_id_using_username(users_list[i]), f"Привет!\nТы тайный ангел для @{users_list_parallel[i]}\nЕго пожелания:\n{wish_of_users_parallel[i]}")
 					except Exception:
 						logger.warning(f"error sending message to user {get_id_using_username(users_list[i])}")
-					with db as cursor:
+					with sqlite3.connect("data.db") as cursor:
 						cursor.execute("UPDATE users SET santa_for = ? WHERE username = ?", (users_list_parallel[i], users_list[i]))
-
 
 			#SEND MESSAGE TO ALL USERS
 			elif message.text[:2] == "**" and rules_level >= config.MODERATOR:
@@ -405,7 +403,7 @@ def text(message):
 				logger.debug("try send message to all prayer...")
 				text = message.text[1:]
 				count = 0
-				with db as cursor:
+				with sqlite3.connect("data.db") as cursor:
 					users = cursor.execute("SELECT user_id, state FROM users WHERE rules >= ?", (config.DEFAULT,))
 				for user in users:
 					if user[1] == 1 and str(message.from_user.id) != user[0]:
@@ -426,7 +424,6 @@ def text(message):
 				logger.info(f"user {message.from_user.id} send message to {count} admin(s)")
 				bot.send_message(message.from_user.id, f"Сообщение отправлено {count} админам.")
 
-
 			#CHANGE RULES OF USER
 			elif message.text[:9] == "/setRules" and rules_level >= config.ADMIN:
 				logger.debug(f"try change access level...")
@@ -443,7 +440,7 @@ def text(message):
 							if get_user_category(message.from_user.id) >= resours[1]:
 								if get_user_category(message.from_user.id) >= get_user_category(get_id_using_username(resours[0])):
 									logger.debug("changing access level...")
-									with db as cursor:
+									with sqlite3.connect("data.db") as cursor:
 										cursor.execute("UPDATE users SET rules = ? WHERE username = ?", (resours[1], resours[0]))
 									logger.info(f"user {message.from_user.id} set access level {resours[1]} to user {get_id_using_username(resours[0])}")
 									if str(message.from_user.id) != str(get_id_using_username(resours[0])):
@@ -488,7 +485,7 @@ def text(message):
 						if user_utils.check_username(username):
 							if get_user_category(message.from_user.id) >= get_user_category(get_id_using_username(username)):
 								logger.debug("changing access level...")
-								with db as cursor:
+								with sqlite3.connect("data.db") as cursor:
 									cursor.execute("UPDATE users SET rules = ?, state = ? WHERE username = ?", (config.BAN, 0, username))
 								logger.info(f"user {message.from_user.id} blocked user {get_id_using_username(username)}")
 								if str(message.from_user.id) != get_id_using_username(username):
@@ -513,7 +510,6 @@ def text(message):
 					logger.debug(e)
 					bot.send_message(message.from_user.id, "Ошибка блокировки пользователя.\nПроверьте, правильно ли вы ввели команду.")
 
-
 			#SEND HELP LIST
 			elif message.text == "/help":
 				logger.debug(f"try send help...")
@@ -530,7 +526,6 @@ def text(message):
 	except Exception as e:
 		logger.error(e)
 
-
 #RUN
 runBot = True
 while runBot:
@@ -540,6 +535,3 @@ while runBot:
 	except Exception as e:
 		logger.critical(e)
 		sleep(3)
-
-#CLOSE DATABASE
-db.close()
