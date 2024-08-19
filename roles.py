@@ -3,7 +3,7 @@ import enum
 
 
 # roles
-class Roles(enum.Enum):
+class Role(enum.IntEnum):
     DEFAULT = 1
     MOD = 2
     ADMIN = 3
