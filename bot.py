@@ -193,11 +193,7 @@ def change_state(message: telebot.types.Message) -> None:
                 logger.debug(f"{message.from_user.id} dont have username")
                 bot.send_message(
                     message.from_user.id,
-                    """
-                    Извините, но для выполнения этой команды необходимо наличие username.
-                    Пожалуйста, установите свой username в настройках Telegram, после чего
-                    отправьте команду /update
-                """,
+                    replies["other"]["none_username"],
                 )
     except telebot.apihelper.ApiTelegramException as e:
         logger.error(e)
@@ -212,7 +208,7 @@ def change_event_state(message: telebot.types.Message) -> None:
             add_to_database(message.from_user.id, message.from_user.username)
 
         if not is_baned(message.from_user.id, "event"):
-            bot.send_message(message.from_user.id, "Регистрация недоступна.")
+            bot.send_message(message.from_user.id, replies["event"]["registration"])
             if (
                 user_utils.check_username(message.from_user.username)
                 and message.from_user.username is not None
@@ -353,7 +349,7 @@ def who_i_am(message: telebot.types.Message) -> None:
 
         if complete:
             logger.debug("the command completed successfully!")
-            bot.send_message(message.from_user.id, f'Ваша роль: "{role}"')
+            bot.send_message(message.from_user.id, replies["who"].format(role=role))
         else:
             logger.warning(
                 f"not found role of user {message.from_user.id}! (@{message.from_user.username})"
@@ -379,7 +375,7 @@ def text(message: telebot.types.Message) -> None:
         # CHECK BAN LEVEL
         if not is_baned(message.from_user.id, "text"):
             # SET MY WISH
-            if message.text[:8] == "/my_wish" and False:  # OFF
+            if message.text[:8] == "/my_wish" and SECRET_ANGEL:
                 logger.debug("try set wish...")
                 text = message.text[9:]
                 with sqlite3.connect("data.db") as cursor:
@@ -388,7 +384,7 @@ def text(message: telebot.types.Message) -> None:
                         (text, message.from_user.id),
                     )
                 logger.debug(f"set wish for {message.from_user.id}")
-                bot.send_message(message.from_user.id, "Текст успешно сохранён")
+                bot.send_message(message.from_user.id, replies["event"]["wish"])
 
             # RANDOMIZE USERS FOR PRAYS LISTS
             elif message.text == "/randomize" and role >= Role.MOD.value:
@@ -509,7 +505,7 @@ def text(message: telebot.types.Message) -> None:
                     try:
                         bot.send_message(
                             get_id_using_username(users_list[i]),
-                            replies["start_event"]["message"].formaet(
+                            replies["event"]["message"].formaet(
                                 username=users_list_parallel[i], wish=wish_of_users_parallel[i]
                             ),
                         )
@@ -628,7 +624,7 @@ def text(message: telebot.types.Message) -> None:
                                         try:
                                             bot.send_message(
                                                 get_id_using_username(resours[0]),
-                                                f"Ваш уровень доступа изменён на {resours[1]}",
+                                                replies["change_role"]["success_me"],
                                             )
                                         except telebot.apihelper.ApiTelegramException:
                                             logger.info(

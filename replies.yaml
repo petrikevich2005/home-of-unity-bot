@@ -26,6 +26,13 @@ event:
   removed:
     success: "Ты больше не тайный ангел."
     notification: "Пользователь @{username} не учавствует в дополнительном событии."
+  message: |
+    Привет!
+    Ты тайный ангел для @{username}
+    Его пожелания:
+    {wish}
+  wish: "Текст успешно сохранён."
+  registrarion: "Регистрация недоступна."
 
 add_to_database: "Пользователь @{username} добавлен(а) в базу данных."
 
@@ -44,13 +51,6 @@ randomize:
     Привет!
     На этой неделе ты молишься за @{username}
     {text}
-
-start_event:
-  message: |
-    Привет!
-    Ты тайный ангел для @{username}
-    Его пожелания:
-    {wish}
 
 admin_messages:
   success: "Сообщение отправлено {count} пользвателям."
@@ -71,6 +71,7 @@ change_role:
   user_not_found: "Пользователя @{username} нет в базе данных."
   notification_error: "Ошибка оповещения пользователя! Проверьте пользователя @{resours}"
   success: "Уровень доступа @{resours_0} успешно изменён на {resours_1}"
+  success_me: "Ваш уровень доступа изменён на {resours[1]}"
   notification: "Пользователь @{username} изменил уровень доступа пользователя @{resours_0} на {resours_1}"
   denied: "У вас недостаточно прав для выполнения этой команды."
   error: |
