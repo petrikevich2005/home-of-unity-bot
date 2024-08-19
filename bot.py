@@ -17,9 +17,11 @@ import user_utils
 import utils
 
 
-load_dotenv()
+read = load_dotenv(".env")
+token = os.getenv("TOKEN")
+print(read, token)
 
-bot = telebot.TeleBot(os.getenv("TOKEN"))
+bot = telebot.TeleBot(token)
 
 logger = utils.get_logger(__name__)
 
@@ -728,10 +730,13 @@ def text(message):
 
 # RUN
 run_bot = True
-while run_bot:
-	logger.info("RUN BOT...")
-	try:
-		bot.polling()
-	except Exception as e:
-		logger.critical(e)
-		sleep(3)
+bot.polling()
+
+# while run_bot:
+# 	logger.info("RUN BOT...")
+# 	try:
+# 		bot.polling()
+# 	except Exception as e:
+# 		# logger.critical(e)
+# 		# sleep(3)
+# 		raise
