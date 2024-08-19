@@ -142,6 +142,11 @@ def start(message: telebot.types.Message) -> None:
         logger.error(e)
 
 
+@bot.message_handler(regexp="^echo ")
+def echo(message: telebot.types.Message) -> None:
+    bot.send_message(message.from_user.id, message.text[5:])
+
+
 # adding to prays lists
 @bot.message_handler(commands=["prays_lists"])
 def change_state(message: telebot.types.Message) -> None:
