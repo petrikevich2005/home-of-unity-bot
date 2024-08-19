@@ -14,9 +14,9 @@ def get_logger(name):
     console_handler.setLevel(logging.INFO)
 
     formatter = logging.Formatter(
-        '%(asctime)s | (%(levelname)s): %(message)s (Line:' +
-        '%(lineno)d) [%(filename)s]', datefmt='%d-%m-%Y %I:%M:%S'
-        )
+        "%(asctime)s | (%(levelname)s): %(message)s (Line:" + "%(lineno)d) [%(filename)s]",
+        datefmt="%d-%m-%Y %I:%M:%S",
+    )
 
     handler.setFormatter(formatter)
     console_handler.setFormatter(formatter)
