@@ -1,7 +1,8 @@
-#utils_module
+# utils_module
 import logging
 
-#Logger settings
+
+# logger settings
 def get_logger(name):
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
@@ -12,7 +13,10 @@ def get_logger(name):
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
 
-    formatter = logging.Formatter('%(asctime)s | (%(levelname)s): %(message)s (Line: %(lineno)d) [%(filename)s]', datefmt='%d-%m-%Y %I:%M:%S')
+    formatter = logging.Formatter(
+        '%(asctime)s | (%(levelname)s): %(message)s (Line:' +
+        '%(lineno)d) [%(filename)s]', datefmt='%d-%m-%Y %I:%M:%S'
+        )
 
     handler.setFormatter(formatter)
     console_handler.setFormatter(formatter)

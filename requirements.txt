@@ -1,1 +1,11 @@
+# requirements
 telebot==0.0.5
+python-dotenv
+
+flake8
+flake8-bugbear
+flake8-builtins
+pep8-naming
+flake8-commas
+flake8-variables-names
+flake8-import-order
