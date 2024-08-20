@@ -9,12 +9,11 @@ from dotenv import load_dotenv
 import telebot
 import yaml
 
+import config
 from roles import Role
 import user_utils
 import utils
 
-
-SECRET_ANGEL = False
 
 read = load_dotenv(".env")
 token = os.getenv("TOKEN")
@@ -217,7 +216,7 @@ def change_event_state(message: telebot.types.Message) -> None:
             if (
                 user_utils.check_username(message.from_user.username)
                 and message.from_user.username is not None
-                and SECRET_ANGEL
+                and config.SECRET_ANGEL
             ):
                 with sqlite3.connect("data.db") as cursor:
                     users = cursor.execute(
@@ -380,7 +379,7 @@ def text(message: telebot.types.Message) -> None:
         # CHECK BAN LEVEL
         if not is_baned(message.from_user.id, "text"):
             # SET MY WISH
-            if message.text[:8] == "/my_wish" and SECRET_ANGEL:
+            if message.text[:8] == "/my_wish" and config.SECRET_ANGEL:
                 logger.debug("try set wish...")
                 text = message.text[9:]
                 with sqlite3.connect("data.db") as cursor:
@@ -455,7 +454,7 @@ def text(message: telebot.types.Message) -> None:
                         )
 
             # START EVENT (RANDOMIZE)
-            elif message.text == "/start_event" and SECRET_ANGEL:  # OFF
+            elif message.text == "/start_event" and config.SECRET_ANGEL:
                 logger.debug("try start_event...")
                 with sqlite3.connect("data.db") as cursor:
                     users = cursor.execute(
