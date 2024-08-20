@@ -19,7 +19,7 @@ SECRET_ANGEL = False
 read = load_dotenv(".env")
 token = os.getenv("TOKEN")
 
-with open("replies.yaml") as f:
+with open("replies.yaml", encoding="utf-8") as f:
     replies = yaml.safe_load(f)
 
 bot = telebot.TeleBot(token)
