@@ -1,2 +1,2 @@
 # config
-SECRET_ANGEL = False
+SECRET_ANGEL = True
