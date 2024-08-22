@@ -54,9 +54,8 @@ def get_username_from_text(text: str) -> str:
     return "".join(username)
 
 
-# give username and category of user
-def select_name_and_category(text: str) -> Tuple[str, int] | Literal[False]:
-    text = text[9:]
+# select username and role from text
+def get_username_and_role_from_text(text: str) -> Tuple[str, int] | Literal[False]:
     username = []
     one = True
     level = 0
@@ -154,10 +153,7 @@ def echo(message: telebot.types.Message) -> None:
 @bot.message_handler(commands=["prays_lists"])
 def change_state(message: telebot.types.Message) -> None:
     if not is_banned(message.from_user.id):
-        if (
-            user_utils.check_username(message.from_user.username)
-            and message.from_user.username is not None
-        ):
+        if (user_utils.check_username(message.from_user.username)):
             with sqlite3.connect("data.db") as cursor:
                 users = cursor.execute(
                     "SELECT user_id, state FROM users WHERE role >= ?",
@@ -192,21 +188,14 @@ def change_state(message: telebot.types.Message) -> None:
                             "UPDATE users SET state = ? WHERE user_id = ?", (state, user[0])
                         )
         else:
-            logger.debug(f"user {message.from_user.id} dont have username")
-            bot.send_message(
-                message.from_user.id,
-                replies["none_username"],
-            )
+            bot.send_message(message.from_user.id, replies["none_username"])
 
 
 # ADDING USER TO EVENT
 @bot.message_handler(commands=["event"])
 def change_event_state(message: telebot.types.Message) -> None:
     if not is_banned(message.from_user.id):
-        if (
-            message.from_user.username is not None and
-            user_utils.check_username(message.from_user.username)
-        ):
+        if (user_utils.check_username(message.from_user.username)):
             if config.SECRET_ANGEL:
                 with sqlite3.connect("data.db") as cursor:
                     users = cursor.execute(
@@ -242,7 +231,6 @@ def change_event_state(message: telebot.types.Message) -> None:
             else:
                 bot.send_message(message.from_user.id, replies["event"]["denied"])
         else:
-            logger.debug(f"user {message.from_user.id} dont have username")
             bot.send_message(message.from_user.id, replies["none_username"])
 
 
@@ -566,7 +554,7 @@ def send_message_for_all_mod_plus(message: telebot.types.Message) -> None:
 @bot.message_handler(regexp="^/setRole ")
 def set_role(message: telebot.types.Message) -> None:
     if get_user_role(message.from_user.id) >= Role.ADMIN.value:
-        resours = select_name_and_category(message.text)
+        resours = get_username_and_role_from_text(message.text[9:])
         if not resours:
             bot.send_message(
                 message.from_user.id,
@@ -661,8 +649,7 @@ def ban(message: telebot.types.Message) -> None:
     ban_status = is_banned(message.from_user.id)
 
     if role >= Role.ADMIN.value and not ban_status:
-        text = message.text[5:]
-        username = get_username_from_text(text)
+        username = get_username_from_text(message.text[5:])
 
         if user_utils.check_username(username):
             other_user_id = get_id_using_username(username)
@@ -728,8 +715,7 @@ def unban(message: telebot.types.Message) -> None:
     ban_status = is_banned(message.from_user.id)
 
     if role >= Role.ADMIN.value and not ban_status:
-        text = message.text[7:]
-        username = get_username_from_text(text)
+        username = get_username_from_text(message.text[7:])
 
         if user_utils.check_username(username):
             other_user_id = get_id_using_username(username)
