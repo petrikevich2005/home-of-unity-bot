@@ -285,7 +285,7 @@ def update_username(message: telebot.types.Message) -> None:
 
 # SEND TO USER HIS ROLE
 @bot.message_handler(commands=["who"])
-def who_i_am(message: telebot.types.Message) -> None:
+def who(message: telebot.types.Message) -> None:
     role = get_user_role(message.from_user.id)
 
     if role == Role.DEFAULT.value:
@@ -326,15 +326,11 @@ def randomize_prayers(message: telebot.types.Message) -> None:
         get_user_role(message.from_user.id) >= Role.MOD.value
     ):
         with sqlite3.connect("data.db") as cursor:
-            users = cursor.execute(
-                "SELECT username, state FROM users WHERE role >= ?",
-                (Role.DEFAULT.value,),
-            )
+            users = cursor.execute("SELECT username FROM users WHERE state = 1")
         prayers_list_parallel = []
         users_id_in_use = []
 
-        # get list "only prayers"
-        prayers_list = [user[0] for user in users if user[1] == 1]
+        prayers_list = [user[0] for user in users]
 
         for i in range(len(prayers_list)):
             run_randomize = True
@@ -392,21 +388,16 @@ def randomize_angels(message: telebot.types.Message) -> None:
     if not is_banned(message.from_user.id):
         if config.SECRET_ANGEL:
             with sqlite3.connect("data.db") as cursor:
-                users = cursor.execute(
-                    "SELECT username, event, my_wish FROM users WHERE role >= ?",
-                    (Role.DEFAULT.value,),
-                )
+                users = cursor.execute("SELECT username, my_wish FROM users WHERE event = 1")
             users_list = []
             users_list_parallel = []
             users_id_in_use = []
             wish_of_users = []
             wish_of_users_parallel = []
 
-            # get list "only angels"
             for user in users:
-                if user[1] == 1:
-                    users_list.append(user[0])
-                    wish_of_users.append(user[2])
+                users_list.append(user[0])
+                wish_of_users.append(user[1])
 
             for i in range(len(users_list)):
                 run_randomize = True
@@ -444,7 +435,7 @@ def randomize_angels(message: telebot.types.Message) -> None:
                 try:
                     bot.send_message(
                         get_id_using_username(users_list[i]),
-                        replies["event"]["message"].formaet(
+                        replies["event"]["message"].format(
                             username=users_list_parallel[i], wish=wish_of_users_parallel[i]
                         ),
                     )
@@ -454,7 +445,7 @@ def randomize_angels(message: telebot.types.Message) -> None:
                     )
                 with sqlite3.connect("data.db") as cursor:
                     cursor.execute(
-                        "UPDATE users SET santa_for = ? WHERE username = ?",
+                        "UPDATE users SET angel = ? WHERE username = ?",
                         (users_list_parallel[i], users_list[i]),
                     )
         else:
@@ -739,7 +730,7 @@ def unban(message: telebot.types.Message) -> None:
                     try:
                         bot.send_message(
                             other_user_id,
-                            replies["unban"]["user_notification"],
+                            replies["unban"]["user_notification"]
                         )
                     except telebot.apihelper.ApiTelegramException:
                         logger.info(
