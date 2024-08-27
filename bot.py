@@ -388,7 +388,7 @@ def randomize_angels(message: telebot.types.Message) -> None:
     if not is_banned(message.from_user.id):
         if config.SECRET_ANGEL:
             with sqlite3.connect("data.db") as cursor:
-                users = cursor.execute("SELECT username, my_wish FROM users WHERE event = 1")
+                users = cursor.execute("SELECT username, wish FROM users WHERE event = 1")
             users_list = []
             users_list_parallel = []
             users_id_in_use = []
